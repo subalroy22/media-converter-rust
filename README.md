@@ -1,4 +1,4 @@
-# Media Converter RS
+# Media Converter
 
 A simple command-line tool to convert MP4 video files to MP3 audio files using Rust and FFmpeg.
 
