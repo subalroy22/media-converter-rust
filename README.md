@@ -13,7 +13,7 @@ A simple command-line tool to convert MP4 video files to MP3 audio files using R
 ## Installation
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/subalroy22/media-converter-rust.git
 cd media-converter-rust
 cargo build --release
 ```
