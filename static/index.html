@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-12">
+        <div class="max-w-2xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">🎵 Media Converter</h1>
+                <p class="text-gray-600">Convert your MP4 videos to MP3 audio files</p>
+            </div>
+
+            <!-- Upload Card -->
+            <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                <div id="upload-area" class="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:border-indigo-500 transition-colors">
+                    <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p class="text-gray-600 mb-2">Click to upload or drag and drop</p>
+                    <p class="text-sm text-gray-500">MP4 files only</p>
+                    <input type="file" id="file-input" accept=".mp4" class="hidden">
+                </div>
+
+                <div id="file-info" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+                    <p class="text-sm text-gray-700"><span class="font-semibold">File:</span> <span id="filename"></span></p>
+                </div>
+            </div>
+
+            <!-- Progress Card -->
+            <div id="progress-card" class="hidden bg-white rounded-lg shadow-lg p-8">
+                <div class="mb-4">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-700" id="progress-text">Processing...</span>
+                        <span class="text-sm font-medium text-indigo-600" id="progress-percent">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div id="progress-bar" class="bg-indigo-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div id="status-message" class="text-sm text-gray-600 mb-4"></div>
+
+                <button id="download-btn" class="hidden w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                    Download MP3
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

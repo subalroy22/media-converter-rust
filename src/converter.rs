@@ -1,21 +1,14 @@
 use std::path::{Path, PathBuf};
 use std::error::Error;
-use std::process::Command;
-use std::fs;
+use std::process::Stdio;
+use tokio::process::Command;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use crate::progress::ProgressTracker;
 
-pub fn convert_to_mp3(input: &Path)->Result<(), Box<dyn Error>> {
+pub async fn convert_to_mp3_with_progress<F>(input: &Path, mut progress_callback: F)->Result<PathBuf, Box<dyn Error + Send + Sync>> where F:FnMut(f32, String) +Send + 'static,{
     if !input.exists() {
         return Err("Input file does not exist".into());
     }
-
-    let metadata = fs::metadata(input)?;
-    
-    if !metadata.is_file() {
-        return Err("Input must be a file, not a directory".into());
-    }
-
-    let file_size_mb = metadata.len() as f64 / 1_048_576.0;
-    println!("Input file size: {:.2} MB", file_size_mb);
 
     if input.extension().and_then(|ext| ext.to_str()) != Some("mp4") {
         return Err("Input file must be .mp4".into());
@@ -25,45 +18,51 @@ pub fn convert_to_mp3(input: &Path)->Result<(), Box<dyn Error>> {
 
     // Check if output file already exists
     if output.exists() {
-        println!("Warning: Output file already exists, it will be overwritten");
-        fs::remove_file(&output)?;
-        println!("Removed existing file: {}", output.display());
+        tokio::fs::remove_file(&output).await?;
     }
 
-    println!("Starting conversion...");
-    let status = Command::new("ffmpeg")
+    progress_callback(0.0, "Starting conversion...".to_string());
+
+    let mut child = Command::new("ffmpeg")
         .args([
             "-i",
             &input.to_string_lossy(),
             "-vn",
             "-acodec",
             "mp3",
+            "-progress",
+            "pipe:2",
             &output.to_string_lossy(),
         ])
-        .status()?;
+        .stderr(Stdio::piped())
+        .spawn()?;
+
+    let stderr = child.stderr.take().ok_or("Failed to capture stderr")?;
+    let reader = BufReader::new(stderr);
+    let mut lines = reader.lines();
+
+    let tracker = ProgressTracker::new();
+
+    while let Ok(Some(line)) = lines.next_line().await {
+        if let Some(duration) = ProgressTracker::parse_duration(&line) {
+            let mut total = tracker.total_duration.lock().await;
+            *total = Some(duration);
+        }
+
+        if let Some(current_time) = ProgressTracker::parse_time(&line) {
+            let progress = tracker.calculate_progress(current_time).await;
+            progress_callback(progress, format!("Converting... {:.1}%", progress));
+        }
+    }
+
+    let status = child.wait().await?;
 
     if status.success() {
-        verify_output_file(&output)?;
-        Ok(())
+        progress_callback(100.0, "Conversion complete".to_string());
+        Ok(output)
     } else {
         Err("FFmpeg conversion failed".into())
     }
-}
-
-fn verify_output_file(output: &Path) -> Result<(), Box<dyn Error>> {
-    if !output.exists() {
-        return Err("Output file was not created".into());
-    }
-
-    // Get metadata of the output file
-    let metadata = fs::metadata(output)?;
-
-    // Check if file has content
-    if metadata.len() == 0 {
-        return Err("Output file is empty".into());
-    }
-
-    Ok(())
 }
 
 pub fn generate_output_path(input: &Path)-> PathBuf {

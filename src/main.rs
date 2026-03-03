@@ -1,19 +1,27 @@
 mod converter;
+mod handlers;
+mod models;
+mod progress;
+mod websocket;
+mod routes;
 
-use clap::Parser;
-use std::path::PathBuf;
+use actix_web::{App, HttpServer, middleware};
 
-#[derive(Parser)]
-#[command(author, version, about = "MP4 to MP3 converter")]
-struct Args {
-    input: PathBuf
-}
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    // Create uploads directory if it doesn't exist
+    std::fs::create_dir_all("./uploads")?;
+    std::fs::create_dir_all("./static")?;
 
-fn main() {
-    let args = Args::parse();
+    println!("🚀 Server starting at http://localhost:8080");
 
-    match converter::convert_to_mp3(&args.input) {
-        Ok(_) => println!("Conversion successfull"),
-        Err(e) => eprintln!("Failed: {}", e)
-    }
+    HttpServer::new(|| {
+        App::new()
+            .wrap(middleware::Logger::default())
+            .configure(routes::configure_routes)
+            .configure(routes::configure_static_files)
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }
